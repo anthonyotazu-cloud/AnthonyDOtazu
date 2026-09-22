@@ -165,51 +165,103 @@ luzRelleno.position.set(-500, -300, -400);
 scene.add(luzRelleno);
 
 /* =========================================================
-   ⭐ ESTRELLAS CENTELLANTES (versión mejorada)
+   ⭐ ESTRELLAS CENTELLANTES (versión garantizada)
    ========================================================= */
 let estrellasGrupos = [];
 
+// Textura de estrella con glow + cruz (destello)
+function crearTexturaEstrella(size = 128) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Glow radial blanco
+  const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0,   'rgba(255,255,255,1)');
+  grad.addColorStop(0.25,'rgba(255,255,255,0.85)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+  grad.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  // Cruz de destello (tipo dibujos animados)
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = size * 0.04;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(size/2, size*0.1);
+  ctx.lineTo(size/2, size*0.9);
+  ctx.moveTo(size*0.1, size/2);
+  ctx.lineTo(size*0.9, size/2);
+  ctx.stroke();
+
+  // Cruz diagonal más suave
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = size * 0.02;
+  ctx.beginPath();
+  ctx.moveTo(size*0.25, size*0.25);
+  ctx.lineTo(size*0.75, size*0.75);
+  ctx.moveTo(size*0.75, size*0.25);
+  ctx.lineTo(size*0.25, size*0.75);
+  ctx.stroke();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
 function crearEstrellasFondo() {
-  // Capa 1: estrellas lejanas medianas
+  const texturaEstrella = crearTexturaEstrella(128);
+
+  // 🌟 Capa 1: estrellas blancas grandes (destellos)
   crearCapaEstrellas({
-    cantidad: 2500,
-    radioMin: 1400,
-    radioMax: 2800,
-    sizeMin: 6,
-    sizeMax: 12,
-    opacidad: 1.0,
-    color: [1.0, 0.98, 0.9]
+    cantidad: 500,
+    radioMin: 800,
+    radioMax: 1800,
+    size: 40,
+    textura: texturaEstrella,
+    colorBase: 0xffffff,
+    doradas: false
   });
 
-  // Capa 2: estrellas brillantes cercanas
+  // 🌟 Capa 2: estrellas medianas blancas
   crearCapaEstrellas({
-    cantidad: 900,
+    cantidad: 1200,
     radioMin: 900,
-    radioMax: 1600,
-    sizeMin: 10,
-    sizeMax: 22,
-    opacidad: 1.0,
-    color: [1.0, 0.95, 0.85]
+    radioMax: 2200,
+    size: 25,
+    textura: texturaEstrella,
+    colorBase: 0xffffff,
+    doradas: false
   });
 
-  // Capa 3: estrellas DORADAS grandes con destello
+  // 🌟 Capa 3: estrellas doradas grandes
   crearCapaEstrellas({
-    cantidad: 400,
+    cantidad: 350,
     radioMin: 700,
-    radioMax: 1400,
-    sizeMin: 16,
-    sizeMax: 32,
-    opacidad: 1.0,
-    color: [1.0, 0.85, 0.35]
+    radioMax: 1600,
+    size: 45,
+    textura: texturaEstrella,
+    colorBase: 0xffd700,
+    doradas: true
+  });
+
+  // 🌟 Capa 4: estrellitas chiquitas de fondo (muchas)
+  crearCapaEstrellas({
+    cantidad: 3000,
+    radioMin: 1200,
+    radioMax: 2600,
+    size: 12,
+    textura: texturaEstrella,
+    colorBase: 0xffffff,
+    doradas: false
   });
 }
 
-function crearCapaEstrellas({ cantidad, radioMin, radioMax, sizeMin, sizeMax, opacidad, color }) {
+function crearCapaEstrellas({ cantidad, radioMin, radioMax, size, textura, colorBase, doradas }) {
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(cantidad * 3);
   const col = new Float32Array(cantidad * 3);
-  const sizes = new Float32Array(cantidad);
-  const phases = new Float32Array(cantidad);
 
   for (let i = 0; i < cantidad; i++) {
     const r = radioMin + Math.random() * (radioMax - radioMin);
@@ -219,83 +271,49 @@ function crearCapaEstrellas({ cantidad, radioMin, radioMax, sizeMin, sizeMax, op
     pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
     pos[i*3+2] = r * Math.cos(phi);
 
-    // Variación de color sutil
-    const variacion = 0.85 + Math.random() * 0.15;
-    col[i*3]   = color[0] * variacion;
-    col[i*3+1] = color[1] * variacion;
-    col[i*3+2] = color[2] * variacion;
-
-    sizes[i] = sizeMin + Math.random() * (sizeMax - sizeMin);
-    phases[i] = Math.random() * Math.PI * 2;
+    // Color con variación sutil
+    const v = 0.8 + Math.random() * 0.2;
+    if (doradas) {
+      col[i*3]   = 1.0 * v;
+      col[i*3+1] = 0.85 * v;
+      col[i*3+2] = 0.35 * v;
+    } else {
+      // Blancas con un toque cálido
+      col[i*3]   = v;
+      col[i*3+1] = v * 0.98;
+      col[i*3+2] = v * 0.92;
+    }
   }
 
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-  geo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
 
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime:        { value: 0 },
-      uPixelRatio:  { value: Math.min(window.devicePixelRatio, 2) },
-      uBaseOpacity: { value: opacidad }
-    },
-    vertexShader: `
-      attribute float size;
-      attribute float phase;
-      uniform float uPixelRatio;
-      varying vec3 vColor;
-      varying float vPhase;
-      void main() {
-        vColor = color;
-        vPhase = phase;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * uPixelRatio * (400.0 / -mv.z);
-        gl_Position = projectionMatrix * mv;
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform float uBaseOpacity;
-      varying vec3 vColor;
-      varying float vPhase;
-
-      void main() {
-        vec2 uv = gl_PointCoord - vec2(0.5);
-        float d = length(uv);
-
-        if (d > 0.5) discard;
-
-        // Núcleo brillante
-        float core = smoothstep(0.5, 0.0, d);
-
-        // Destello en cruz (tipo estrella de dibujos)
-        float cross = 0.0;
-        cross += smoothstep(0.03, 0.0, abs(uv.x)) * smoothstep(0.5, 0.0, abs(uv.y));
-        cross += smoothstep(0.03, 0.0, abs(uv.y)) * smoothstep(0.5, 0.0, abs(uv.x));
-
-        // Parpadeo individual bien marcado
-        float twinkle = 0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 2.5 + vPhase * 6.28));
-
-        float alpha = (core + cross * 0.8) * twinkle * uBaseOpacity;
-
-        // Brillo extra en el centro
-        vec3 finalColor = vColor + vec3(core * 0.4);
-
-        gl_FragColor = vec4(finalColor, alpha);
-      }
-    `,
+  const mat = new THREE.PointsMaterial({
+    size: size,
+    map: textura,
     vertexColors: true,
     transparent: true,
+    opacity: 0.95,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    depthTest: false
+    depthTest: false,
+    sizeAttenuation: true
   });
 
   const points = new THREE.Points(geo, mat);
   points.renderOrder = -1;
   scene.add(points);
-  estrellasGrupos.push({ points, mat });
+
+    // 🌟 Parpadeo de las capas de estrellas
+  estrellasGrupos.forEach(g => {
+    if (g.velParpadeo) {
+      // Cada capa parpadea con su propio ritmo
+      const p = 0.55 + 0.45 * Math.sin(t * g.velParpadeo + g.fase);
+      g.mat.opacity = p;
+      // También variar ligeramente el tamaño para que "respiren"
+      g.mat.size = g.mat.size * (1 + Math.sin(t * g.velParpadeo + g.fase) * 0.001);
+    }
+  });
 }
 
 /* ---------- Texturas ---------- */
@@ -415,7 +433,7 @@ function crearMundoEsfera() {
     mundo.add(sprite);
   }
 
-  const texCentral = texturaMensaje("Te amo Lucero 💛", 1024);
+  const texCentral = texturaMensaje("Te amo Lucero Mi Mocosa 💛", 1024);
   const matCentral = new THREE.SpriteMaterial({
     map: texCentral, transparent: true, depthTest: false
   });
