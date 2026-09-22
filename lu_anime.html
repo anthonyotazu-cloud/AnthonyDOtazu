@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para Lucero Mi Mocosa 🌻</title>
+    <title>Para Lucero 🌻</title>
     <style>
         * {
             margin: 0;
@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
         body {
-            background: radial-gradient(circle at center, #0a0518 0%, #000000 100%);
+            background: radial-gradient(circle at center, #060310 0%, #000000 100%);
             overflow: hidden;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -21,8 +21,9 @@
             align-items: center;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
-        /* Pantalla de Inicio para saltar el bloqueo de audio */
+        /* Pantalla con el Girasol Inicial */
         #welcome-screen {
             position: fixed;
             top: 0;
@@ -35,24 +36,30 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.8s ease;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #welcome-screen h2 {
-            color: #ffd700;
-            font-size: 2rem;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-        .start-btn {
-            background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
-            color: #000;
-            border: none;
-            padding: 15px 35px;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: 1.2rem;
+        .initial-sunflower {
+            font-size: 7rem;
             cursor: pointer;
-            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+            filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8));
+            animation: pulseSunflower 2.5s infinite ease-in-out;
+            transition: transform 0.3s;
+        }
+        .initial-sunflower:hover {
+            transform: scale(1.15);
+        }
+        #welcome-screen p {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-top: 25px;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
+        @keyframes pulseSunflower {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.7)); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 40px rgba(255, 170, 0, 0.9)); }
         }
         canvas {
             position: absolute;
@@ -73,6 +80,8 @@
             z-index: 10;
             width: 100%;
             pointer-events: none;
+            opacity: 0;
+            transition: opacity 1.5s ease-in;
         }
         .title-top h1 {
             color: #ffd700;
@@ -81,7 +90,6 @@
             font-weight: bold;
             letter-spacing: 2px;
         }
-        /* Ocultar el iframe de YouTube para que solo se escuche */
         #youtube-player {
             position: absolute;
             width: 1px;
@@ -93,17 +101,17 @@
 </head>
 <body>
 
-    <!-- Pantalla de bienvenida interactiva -->
+    <!-- Pantalla del Girasol Inicial -->
     <div id="welcome-screen">
-        <h2>Recibiste un regalo... 🎁</h2>
-        <button class="start-btn" onclick="startExperience()">Abrir Regalo 🌻</button>
+        <div class="initial-sunflower" onclick="startExperience()">🌻</div>
+        <p>TOCA EL GIRASOL</p>
     </div>
 
-    <div class="title-top">
+    <div class="title-top" id="main-title">
         <h1>Feliz día de las Flores Amarillas 🌻</h1>
     </div>
 
-    <!-- API Iframe de YouTube Oculta con la canción original de Floricienta -->
+    <!-- Música oficial protegida de YouTube -->
     <iframe id="youtube-player" src="https://youtube.com" allow="autoplay"></iframe>
 
     <canvas id="galaxyCanvas"></canvas>
@@ -113,31 +121,25 @@
         const ctx = canvas.getContext('2d');
         let player;
 
-        // Cargar el script de la API de YouTube
         const tag = document.createElement('script');
         tag.src = "https://youtube.com";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
+        const firstScriptTag = document.getElementsByTagName('script');
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('youtube-player', {
-                events: {
-                    'onReady': onPlayerReady
-                }
+                events: { 'onReady': () => {} }
             });
         }
 
-        function onPlayerReady(event) {
-            // El reproductor queda listo en segundo plano
-        }
-
         function startExperience() {
-            // Desvanecer la pantalla de bienvenida
             const welcome = document.getElementById('welcome-screen');
             welcome.style.opacity = '0';
-            setTimeout(() => welcome.style.display = 'none', 800);
+            setTimeout(() => welcome.style.display = 'none', 1000);
+            
+            // Mostrar título superior suavemente
+            document.getElementById('main-title').style.opacity = '1';
 
-            // Iniciar la música de Floricienta de forma segura mediante acción de usuario
             if (player && typeof player.playVideo === 'function') {
                 player.playVideo();
             }
@@ -188,16 +190,19 @@
             });
         }
 
+        // 600 estrellas centelleantes
         const stars = [];
-        for(let i=0; i<250; i++) {
+        for(let i=0; i<600; i++) {
             stars.push({
                 x: Math.random() * window.innerWidth,
                 y: Math.random() * window.innerHeight,
-                size: Math.random() * 1.8
+                size: Math.random() * 1.5,
+                twinkleSpeed: Math.random() * 0.04 + 0.01,
+                phase: Math.random() * Math.PI * 2
             });
         }
 
-        // Interactividad
+        // Controladores interactivos arrastrables
         canvas.addEventListener('mousedown', (e) => { isDragging = true; previousX = e.clientX; });
         window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
@@ -208,15 +213,16 @@
         });
         window.addEventListener('mouseup', () => { isDragging = false; });
 
-        canvas.addEventListener('touchstart', (e) => { isDragging = true; previousX = e.touches[0].clientX; });
+        canvas.addEventListener('touchstart', (e) => { isDragging = true; previousX = e.touches[0].clientX; }, { passive: true });
         window.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
+            e.preventDefault(); 
             const deltaX = e.touches[0].clientX - previousX;
-            currentSpeed = deltaX * 0.008; 
+            currentSpeed = deltaX * 0.006; 
             currentRotation += currentSpeed;
             previousX = e.touches[0].clientX;
-        });
-        canvas.addEventListener('touchend', () => { isDragging = false; });
+        }, { passive: false });
+        window.addEventListener('touchend', () => { isDragging = false; });
 
         let time = 0;
 
@@ -231,11 +237,16 @@
                 currentRotation += currentSpeed;
             }
 
-            ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+            // Fondo estelar titilante
             stars.forEach(star => {
+                star.phase += star.twinkleSpeed;
+                const alpha = (Math.sin(star.phase) + 1) / 2 * 0.7 + 0.3;
+                ctx.save();
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
                 ctx.beginPath();
                 ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             });
 
             particles.forEach(p => {
@@ -250,8 +261,9 @@
                 const cos = Math.cos(p.calculatedAngle);
                 const sin = Math.sin(p.calculatedAngle);
 
+                // Dibujar el mundo en el centro en base al eje Z profundo
                 if (sin > 0 && !centerDrawn) {
-                    drawBlackHoleCenter(centerX, centerY);
+                    drawWorldCenter(centerX, centerY);
                     centerDrawn = true;
                 }
 
@@ -271,21 +283,3 @@
                     ctx.textAlign = "center";
                     ctx.fillText(p.text, x, y);
                 } else {
-                    ctx.font = `${p.fontSize * scale}px sans-serif`;
-                    ctx.translate(x, y);
-                    ctx.rotate(p.rot);
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText(p.text, 0, 0);
-                }
-                ctx.restore();
-            });
-
-            if (!centerDrawn) {
-                drawBlackHoleCenter(centerX, centerY);
-            }
-            requestAnimationFrame(animate);
-        }
-
-        function drawBlackHoleCenter(cx, cy) {
-            ctx.save();
