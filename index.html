@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌻 Feliz día de las Flores Amarillas — Te amo Lucero Mi Mocasa 💛</title>
+<title>🌻 Te amo Lucero 💛</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
-    width: 100%; height: 100%; overflow: hidden;
+    width: 100%; height: 100%;
+    overflow: hidden;
     background: #000;
     font-family: 'Segoe UI', sans-serif;
-    cursor: grab;
     touch-action: none;
+    cursor: grab;
   }
   body.dragging { cursor: grabbing; }
 
@@ -51,83 +52,11 @@
   }
   @keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
 
-  #scene {
+  #canvas3d {
     position: fixed; inset: 0;
-    perspective: 1400px;
-    opacity: 0; transition: opacity 2s ease 0.5s;
+    opacity: 0; transition: opacity 2s ease 0.3s;
   }
-  #scene.visible { opacity: 1; }
-
-  #universe {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 0; height: 0;
-    transform-style: preserve-3d;
-  }
-
-  .star {
-    position: absolute;
-    background: #fff;
-    border-radius: 50%;
-    animation: twinkle 3s infinite alternate;
-  }
-  @keyframes twinkle {
-    from { opacity: .2; transform: scale(.6); }
-    to   { opacity: 1;  transform: scale(1.2); }
-  }
-
-  .world {
-    position: absolute;
-    width: 320px; height: 320px;
-    left: -160px; top: -160px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #ffe680, #ffb300 60%, #c47b00);
-    box-shadow:
-      0 0 60px #ffd700,
-      0 0 140px #ffae00,
-      inset -20px -20px 60px rgba(0,0,0,.35);
-    display: flex; align-items: center; justify-content: center;
-    transform-style: preserve-3d;
-    animation: rotateWorld 20s linear infinite;
-  }
-  @keyframes rotateWorld {
-    from { transform: rotateY(0deg); }
-    to   { transform: rotateY(360deg); }
-  }
-  .world-text {
-    font-size: 34px;
-    font-weight: 800;
-    color: #4a2500;
-    text-shadow: 0 2px 4px rgba(255,255,255,.6);
-    text-align: center;
-    padding: 20px;
-    animation: counterRotate 20s linear infinite;
-  }
-  @keyframes counterRotate {
-    from { transform: rotateY(0deg); }
-    to   { transform: rotateY(-360deg); }
-  }
-
-  .bouquet {
-    position: absolute;
-    font-size: 46px;
-    left: -23px; top: -23px;
-    filter: drop-shadow(0 0 12px #ffd700);
-    will-change: transform;
-  }
-
-  .msg {
-    position: absolute;
-    color: #ffe680;
-    font-size: 16px;
-    white-space: nowrap;
-    padding: 6px 14px;
-    border-radius: 20px;
-    background: rgba(255, 215, 0, .08);
-    border: 1px solid rgba(255, 215, 0, .35);
-    text-shadow: 0 0 10px #ffae00;
-    will-change: transform;
-  }
+  #canvas3d.visible { opacity: 1; }
 
   #hud {
     position: fixed;
@@ -147,7 +76,7 @@
     text-align: center;
     max-width: 90vw;
   }
-  #scene.visible ~ #hud { opacity: 1; }
+  #hud.visible { opacity: 1; }
 
   #ytPlayer {
     position: fixed;
@@ -166,29 +95,32 @@
   <div class="hint">✨ Toca la flor ✨</div>
 </div>
 
-<div id="scene">
-  <div id="universe">
-    <div class="world">
-      <div class="world-text">Te amo<br>Lucero 💛</div>
-    </div>
-  </div>
-</div>
+<canvas id="canvas3d"></canvas>
 
 <div id="hud">🖱️ Arrastra para girar &nbsp;|&nbsp; 🔍 Rueda para zoom &nbsp;|&nbsp; 👆 Doble clic para restablecer</div>
 
 <div id="ytPlayer"></div>
 
-<script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
 /* =========================================================
    CONFIGURACIÓN
    ========================================================= */
 const YOUTUBE_VIDEO_ID = "S7gMzYqXIZc"; // 🎵 Floricienta — Flores Amarillas
 
-/* =========================================================
-   MENSAJES Y RAMOS
-   ========================================================= */
 const mensajes = [
   "Te amo Lucero 💛",
+  "Eres mi mocosa 💛",
+  "Eres mi dramática 🌻",
   "Feliz día de las Flores Amarillas 🌻",
   "Eres mi sol 🌻",
   "Mi flor favorita 🌼",
@@ -210,159 +142,481 @@ const mensajes = [
   "Feliz día mi amor 🌞"
 ];
 
-const ramos = ["💐","🌻","🌼","🌷","🌸","💐","🌻","🌼","🌷","🌸","💐","🌻","🌻","🌼"];
+const emojisRamos = ["💐","🌻","🌼","🌸","💐","🌻","🌼","🌸","🌻","💐","🌸","🌼"];
 
 /* =========================================================
-   GALAXIA
+   ESCENA 3D
    ========================================================= */
-const universe = document.getElementById('universe');
-const scene    = document.getElementById('scene');
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
 
-function crearEstrellas() {
-  for (let i = 0; i < 260; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const size = Math.random() * 2.5 + 0.5;
-    s.style.width  = size + 'px';
-    s.style.height = size + 'px';
-    s.style.left   = Math.random() * window.innerWidth + 'px';
-    s.style.top    = Math.random() * window.innerHeight + 'px';
-    s.style.animationDelay = (Math.random() * 3) + 's';
-    scene.appendChild(s);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 8000);
+
+/* ---------- Luces ---------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+const luzPrincipal = new THREE.PointLight(0xffd700, 2.5, 3000);
+luzPrincipal.position.set(400, 400, 500);
+scene.add(luzPrincipal);
+const luzRelleno = new THREE.PointLight(0xffae00, 1.5, 3000);
+luzRelleno.position.set(-500, -300, -400);
+scene.add(luzRelleno);
+
+/* =========================================================
+   ⭐ ESTRELLAS CENTELLANTES (muchísimas + parpadeo individual)
+   ========================================================= */
+let estrellasGrupos = [];   // cada grupo parpadea en su propio ritmo
+
+function crearEstrellasFondo() {
+  // 🌟 Capa 1: estrellas lejanas (muchas, chiquitas) - 3000
+  crearCapaEstrellas({
+    cantidad: 4000,
+    radioMin: 2200,
+    radioMax: 4500,
+    sizeMin: 2,
+    sizeMax: 5,
+    opacidad: 0.85
+  });
+
+  // 🌟 Capa 2: estrellas medianas (más brillantes) - 1200
+  crearCapaEstrellas({
+    cantidad: 1500,
+    radioMin: 1800,
+    radioMax: 2800,
+    sizeMin: 4,
+    sizeMax: 9,
+    opacidad: 1
+  });
+
+  // 🌟 Capa 3: estrellas cercanas grandes (destellos) - 250
+  crearCapaEstrellas({
+    cantidad: 550,
+    radioMin: 1000,
+    radioMax: 2000,
+    sizeMin: 8,
+    sizeMax: 16,
+    opacidad: 1
+  });
+
+  // 🌟 Capa 4: estrellas DORADAS tipo destello - 400
+  crearCapaEstrellasDoradas({
+    cantidad: 400,
+    radioMin: 1200,
+    radioMax: 3000,
+    sizeMin: 6,
+    sizeMax: 14
+  });
+}
+
+function crearCapaEstrellas({ cantidad, radioMin, radioMax, sizeMin, sizeMax, opacidad }) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(cantidad * 3);
+  const col = new Float32Array(cantidad * 3);
+  const sizes = new Float32Array(cantidad);
+  const phases = new Float32Array(cantidad); // fase individual para centelleo
+
+  for (let i = 0; i < cantidad; i++) {
+    const r = radioMin + Math.random() * (radioMax - radioMin);
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i*3+2] = r * Math.cos(phi);
+
+    const c = 0.8 + Math.random() * 0.2;
+    col[i*3]   = c;
+    col[i*3+1] = c * (0.88 + Math.random() * 0.12);
+    col[i*3+2] = c * (0.6 + Math.random() * 0.3);
+
+    sizes[i] = sizeMin + Math.random() * (sizeMax - sizeMin);
+    phases[i] = Math.random() * Math.PI * 2;
   }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  geo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+
+  // Shader personalizado para que cada estrella parpadee individualmente
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+      uBaseOpacity: { value: opacidad }
+    },
+    vertexShader: `
+      attribute float size;
+      attribute float phase;
+      varying vec3 vColor;
+      varying float vPhase;
+      void main() {
+        vColor = color;
+        vPhase = phase;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = size * uPixelRatio * (300.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float uBaseOpacity;
+      varying vec3 vColor;
+      varying float vPhase;
+      void main() {
+        // Forma circular suave
+        vec2 uv = gl_PointCoord - vec2(0.5);
+        float d = length(uv);
+        if (d > 0.5) discard;
+        float alpha = smoothstep(0.5, 0.0, d);
+
+        // ⭐ Centelleo individual (cada estrella tiene su propia fase)
+        float twinkle = 0.55 + 0.45 * sin(uTime * 3.0 + vPhase * 6.28);
+
+        // Destello extra en el centro
+        float core = smoothstep(0.2, 0.0, d) * 0.8;
+
+        gl_FragColor = vec4(vColor * (1.0 + core), alpha * twinkle * uBaseOpacity);
+      }
+    `,
+    vertexColors: true,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    uniformsNeedUpdate: true
+  });
+  // ¡importante! pasar uniforms al shader
+  mat.uniforms.uTime = { value: 0 };
+
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+  estrellasGrupos.push({ points, mat });
 }
 
-let orbitaRamos = [];
-function crearRamos() {
-  const radioBase = 420;
-  ramos.forEach((emoji, i) => {
-    const el = document.createElement('div');
-    el.className = 'bouquet';
-    el.textContent = emoji;
-    const angulo = (i / ramos.length) * Math.PI * 2;
-    const radio  = radioBase + (i % 3) * 70;
-    const altura = (i % 5 - 2) * 90;
-    const velocidad = 0.08 + Math.random() * 0.05;
-    const offset = Math.random() * Math.PI * 2;
-    orbitaRamos.push({ el, angulo, radio, altura, velocidad, offset, fase: Math.random() * Math.PI * 2 });
-    universe.appendChild(el);
+function crearCapaEstrellasDoradas({ cantidad, radioMin, radioMax, sizeMin, sizeMax }) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(cantidad * 3);
+  const sizes = new Float32Array(cantidad);
+  const phases = new Float32Array(cantidad);
+
+  for (let i = 0; i < cantidad; i++) {
+    const r = radioMin + Math.random() * (radioMax - radioMin);
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i*3+2] = r * Math.cos(phi);
+    sizes[i] = sizeMin + Math.random() * (sizeMax - sizeMin);
+    phases[i] = Math.random() * Math.PI * 2;
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  geo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
+    },
+    vertexShader: `
+      attribute float size;
+      attribute float phase;
+      varying float vPhase;
+      void main() {
+        vPhase = phase;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = size * uPixelRatio * (300.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying float vPhase;
+      void main() {
+        vec2 uv = gl_PointCoord - vec2(0.5);
+        float d = length(uv);
+        if (d > 0.5) discard;
+        float alpha = smoothstep(0.5, 0.0, d);
+        float twinkle = 0.5 + 0.5 * sin(uTime * 4.0 + vPhase * 6.28);
+        float core = smoothstep(0.18, 0.0, d);
+        vec3 gold = vec3(1.0, 0.85, 0.35);
+        gl_FragColor = vec4(gold * (1.0 + core), alpha * twinkle);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
   });
+
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+  estrellasGrupos.push({ points, mat });
 }
 
-let orbitaMensajes = [];
-function crearMensajes() {
-  const radioBase = 700;
-  mensajes.forEach((texto, i) => {
-    const el = document.createElement('div');
-    el.className = 'msg';
-    el.textContent = texto;
-    const angulo = (i / mensajes.length) * Math.PI * 2;
-    const radio  = radioBase + (i % 4) * 90;
-    const altura = (i % 6 - 3) * 110;
-    const velocidad = 0.04 + Math.random() * 0.04;
-    const offset = Math.random() * Math.PI * 2;
-    orbitaMensajes.push({ el, angulo, radio, altura, velocidad, offset, fase: Math.random() * Math.PI * 2 });
-    universe.appendChild(el);
-  });
+/* ---------- Texturas ---------- */
+function texturaEmoji(emoji, size = 256) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.font = `${size * 0.82}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(255, 215, 0, 0.9)';
+  ctx.shadowBlur = size * 0.12;
+  ctx.fillText(emoji, size/2, size/2 + size*0.05);
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function texturaMensaje(texto, size = 1024) {
+  const c = document.createElement('canvas');
+  c.width = size;
+  c.height = size / 4;
+  const ctx = c.getContext('2d');
+  ctx.font = `bold ${size * 0.075}px 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const pad = 20;
+  const w = ctx.measureText(texto).width + pad * 2;
+  const h = size * 0.14;
+  const x = (c.width - w) / 2;
+  const y = (c.height - h) / 2;
+
+  ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, h/2);
+  else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowColor = '#ffae00';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ffe680';
+  ctx.fillText(texto, c.width/2, c.height/2);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  tex.anisotropy = 8;
+  return tex;
 }
 
 /* =========================================================
-   ANIMACIÓN
+   🌍 MUNDO ESFÉRICO CON RAMOS
    ========================================================= */
-let rotX = -20, rotY = 0, zoom = 0.5;
-let targetRotX = -20, targetRotY = 0, targetZoom = 0.5;
-let time = 0;
+const RADIO_MUNDO = 300;
+const CAPA_FLORES  = 320;
 
-function animar() {
-  time += 0.016;
-  targetRotY += 0.08;
-  rotX  += (targetRotX - rotX) * 0.08;
-  rotY  += (targetRotY - rotY) * 0.08;
-  zoom  += (targetZoom - zoom) * 0.08;
+let mundo;
+let floresEsfera = [];
 
-  universe.style.transform =
-    `translate(-50%, -50%) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${zoom})`;
-
-  orbitaRamos.forEach(o => {
-    const a = o.angulo + time * o.velocidad + o.offset;
-    const x = Math.cos(a) * o.radio;
-    const z = Math.sin(a) * o.radio;
-    const y = o.altura + Math.sin(time * 1.5 + o.fase) * 20;
-    o.el.style.transform = `translate3d(${x}px, ${y}px, ${z}px) scale(${1 + Math.sin(time + o.fase) * 0.15})`;
+function crearMundoEsfera() {
+  const geo = new THREE.SphereGeometry(RADIO_MUNDO, 96, 96);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffb300,
+    emissive: 0xff9500,
+    emissiveIntensity: 0.4,
+    roughness: 0.55,
+    metalness: 0.25
   });
+  mundo = new THREE.Mesh(geo, mat);
+  scene.add(mundo);
 
-  orbitaMensajes.forEach(o => {
-    const a = o.angulo + time * o.velocidad + o.offset;
-    const x = Math.cos(a) * o.radio;
-    const z = Math.sin(a) * o.radio;
-    const y = o.altura + Math.sin(time * 1.2 + o.fase) * 25;
-    o.el.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
-    const op = 0.5 + (z / o.radio) * 0.5;
-    o.el.style.opacity = Math.max(0.15, op);
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(RADIO_MUNDO * 1.18, 48, 48),
+    new THREE.MeshBasicMaterial({
+      color: 0xffd700,
+      transparent: true,
+      opacity: 0.1,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide
+    })
+  );
+  mundo.add(halo);
+
+  const CANTIDAD_RAMOS = 140;
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+  for (let i = 0; i < CANTIDAD_RAMOS; i++) {
+    const y = 1 - (i / (CANTIDAD_RAMOS - 1)) * 2;
+    const radioEnY = Math.sqrt(1 - y * y);
+    const theta = goldenAngle * i;
+
+    const x = Math.cos(theta) * radioEnY;
+    const z = Math.sin(theta) * radioEnY;
+
+    const emoji = emojisRamos[i % emojisRamos.length];
+    const tex = texturaEmoji(emoji, 256);
+    const matSprite = new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false
+    });
+    const sprite = new THREE.Sprite(matSprite);
+
+    const pos = new THREE.Vector3(x, y, z).multiplyScalar(CAPA_FLORES);
+    sprite.position.copy(pos);
+
+    const tam = 55 + Math.random() * 30;
+    sprite.scale.set(tam, tam, 1);
+
+    floresEsfera.push({
+      sprite, basePos: pos.clone(),
+      fase: Math.random() * Math.PI * 2, tamBase: tam
+    });
+
+    mundo.add(sprite);
+  }
+
+  const texCentral = texturaMensaje("Te amo Lucero 💛", 1024);
+  const matCentral = new THREE.SpriteMaterial({
+    map: texCentral, transparent: true, depthTest: false
   });
+  const spriteCentral = new THREE.Sprite(matCentral);
+  spriteCentral.scale.set(360, 90, 1);
+  spriteCentral.renderOrder = 999;
+  mundo.add(spriteCentral);
+}
 
-  requestAnimationFrame(animar);
+/* =========================================================
+   💬 MENSAJES ORBITANDO
+   ========================================================= */
+let mensajesSprites = [];
+
+function crearMensajes() {
+  const RADIO_ORBITA = 900;
+  mensajes.forEach((texto, i) => {
+    const tex = texturaMensaje(texto, 1024);
+    const mat = new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(320, 80, 1);
+
+    const angulo = (i / mensajes.length) * Math.PI * 2;
+    const radio  = RADIO_ORBITA + (i % 4) * 80;
+    const altura = (i % 6 - 3) * 130;
+    const velocidad = 0.08 + Math.random() * 0.05;
+    const fase = Math.random() * Math.PI * 2;
+
+    mensajesSprites.push({ sprite, angulo, radio, altura, velocidad, fase });
+    scene.add(sprite);
+  });
 }
 
 /* =========================================================
    INTERACCIÓN
    ========================================================= */
+let rotX = 0, rotY = 0;
+let targetRotY = 0, targetRotX = 0;
+let camDist = 1100, targetCamDist = 1100;
 let dragging = false, lastX = 0, lastY = 0;
 
-document.addEventListener('mousedown', e => {
-  if (!scene.classList.contains('visible')) return;
+canvas.addEventListener('pointerdown', e => {
   dragging = true;
   lastX = e.clientX; lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
   document.body.classList.add('dragging');
 });
-document.addEventListener('mouseup', () => {
+canvas.addEventListener('pointerup', () => {
   dragging = false;
   document.body.classList.remove('dragging');
 });
-document.addEventListener('mousemove', e => {
+canvas.addEventListener('pointermove', e => {
   if (!dragging) return;
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
   targetRotY += dx * 0.4;
-  targetRotX -= dy * 0.4;
-  targetRotX = Math.max(-80, Math.min(80, targetRotX));
+  targetRotX += dy * 0.4;
+  targetRotX = Math.max(-75, Math.min(75, targetRotX));
   lastX = e.clientX; lastY = e.clientY;
 });
-
-document.addEventListener('wheel', e => {
-  if (!scene.classList.contains('visible')) return;
+canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  targetZoom += e.deltaY * -0.001;
-  targetZoom = Math.max(0.15, Math.min(2.5, targetZoom));
+  targetCamDist += e.deltaY * 1.0;
+  targetCamDist = Math.max(500, Math.min(2200, targetCamDist));
 }, { passive: false });
-
-document.addEventListener('dblclick', () => {
-  targetRotX = -20; targetRotY = 0; targetZoom = 0.5;
+canvas.addEventListener('dblclick', () => {
+  targetRotX = 0; targetRotY = 0; targetCamDist = 1100;
 });
 
-let touchStart = null;
-document.addEventListener('touchstart', e => {
-  if (e.touches.length === 1) {
-    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }
-});
-document.addEventListener('touchmove', e => {
-  if (!scene.classList.contains('visible')) return;
-  if (e.touches.length === 1 && touchStart) {
-    const dx = e.touches[0].clientX - touchStart.x;
-    const dy = e.touches[0].clientY - touchStart.y;
-    targetRotY += dx * 0.4;
-    targetRotX -= dy * 0.4;
-    targetRotX = Math.max(-80, Math.min(80, targetRotX));
-    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }
+/* =========================================================
+   ANIMACIÓN
+   ========================================================= */
+const clock = new THREE.Clock();
+let inicializado = false;
+
+function animar() {
+  if (!inicializado) return;
+  const t = clock.getElapsedTime();
+
+  targetRotY += 0.12;
+
+  rotY += (targetRotY - rotY) * 0.08;
+  rotX += (targetRotX - rotX) * 0.08;
+  camDist += (targetCamDist - camDist) * 0.08;
+
+  const radY = rotY * Math.PI / 180;
+  const radX = rotX * Math.PI / 180;
+  camera.position.set(
+    Math.sin(radY) * Math.cos(radX) * camDist,
+    Math.sin(radX) * camDist,
+    Math.cos(radY) * Math.cos(radX) * camDist
+  );
+  camera.lookAt(0, 0, 0);
+
+  if (mundo) mundo.rotation.y += 0.0025;
+
+  // Actualizar tiempo en los shaders de estrellas (para el centelleo)
+  estrellasGrupos.forEach(g => {
+    if (g.mat.uniforms && g.mat.uniforms.uTime) {
+      g.mat.uniforms.uTime.value = t;
+    }
+  });
+
+  // Flores con bob
+  floresEsfera.forEach(f => {
+    const bob = Math.sin(t * 2 + f.fase) * 0.06;
+    f.sprite.position.copy(f.basePos).multiplyScalar(1 + bob);
+    const s = f.tamBase * (1 + Math.sin(t * 3 + f.fase) * 0.08);
+    f.sprite.scale.set(s, s, 1);
+  });
+
+  // Mensajes orbitando
+  mensajesSprites.forEach(o => {
+    const a = o.angulo + t * o.velocidad;
+    const x = Math.cos(a) * o.radio;
+    const z = Math.sin(a) * o.radio;
+    const y = o.altura + Math.sin(t * 1.2 + o.fase) * 25;
+    o.sprite.position.set(x, y, z);
+
+    const depth = z / o.radio;
+    const scaleFactor = 0.7 + (depth + 1) * 0.15;
+    o.sprite.scale.set(320 * scaleFactor, 80 * scaleFactor, 1);
+
+    const op = 0.35 + (depth + 1) * 0.35;
+    o.sprite.material.opacity = Math.max(0.15, Math.min(1, op));
+  });
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animar);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 /* =========================================================
    YOUTUBE + INICIO
    ========================================================= */
 let player;
-function onYouTubeIframeAPIReady() {
+window.onYouTubeIframeAPIReady = function () {
   player = new YT.Player('ytPlayer', {
     height: '1', width: '1',
     videoId: YOUTUBE_VIDEO_ID,
@@ -371,14 +625,9 @@ function onYouTubeIframeAPIReady() {
       playlist: YOUTUBE_VIDEO_ID,
       modestbranding: 1, rel: 0, playsinline: 1
     },
-    events: {
-      onReady: () => {
-        console.log('🎵 Floricienta lista');
-        player.setVolume(80);
-      }
-    }
+    events: { onReady: () => player.setVolume(80) }
   });
-}
+};
 
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
@@ -386,6 +635,7 @@ document.head.appendChild(tag);
 
 const sunflower = document.getElementById('sunflower');
 const flowerScreen = document.getElementById('flowerScreen');
+const hud = document.getElementById('hud');
 
 sunflower.addEventListener('click', () => {
   sunflower.classList.add('clicked');
@@ -399,13 +649,15 @@ sunflower.addEventListener('click', () => {
 
   setTimeout(() => {
     flowerScreen.classList.add('hidden');
-    scene.classList.add('visible');
-    crearEstrellas();
-    crearRamos();
+    canvas.classList.add('visible');
+    hud.classList.add('visible');
+
+    crearEstrellasFondo();
+    crearMundoEsfera();
     crearMensajes();
-    targetZoom = 0.85;
-    setTimeout(() => { targetZoom = 0.5; }, 1500);
-    requestAnimationFrame(animar);
+
+    inicializado = true;
+    animar();
   }, 900);
 });
 
