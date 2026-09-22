@@ -172,7 +172,7 @@ let estrellasGrupos = [];   // cada grupo parpadea en su propio ritmo
 function crearEstrellasFondo() {
   // 🌟 Capa 1: estrellas lejanas (muchas, chiquitas) - 3000
   crearCapaEstrellas({
-    cantidad: 4000,
+    cantidad: 3000,
     radioMin: 2200,
     radioMax: 4500,
     sizeMin: 2,
@@ -182,8 +182,8 @@ function crearEstrellasFondo() {
 
   // 🌟 Capa 2: estrellas medianas (más brillantes) - 1200
   crearCapaEstrellas({
-    cantidad: 1500,
-    radioMin: 1800,
+    cantidad: 1200,
+    radioMin: 1500,
     radioMax: 2800,
     sizeMin: 4,
     sizeMax: 9,
@@ -192,7 +192,7 @@ function crearEstrellasFondo() {
 
   // 🌟 Capa 3: estrellas cercanas grandes (destellos) - 250
   crearCapaEstrellas({
-    cantidad: 550,
+    cantidad: 250,
     radioMin: 1000,
     radioMax: 2000,
     sizeMin: 8,
@@ -472,7 +472,7 @@ function crearMundoEsfera() {
     mundo.add(sprite);
   }
 
-  const texCentral = texturaMensaje("Te amo Lucero 💛", 1024);
+  const texCentral = texturaMensaje("Te amo Lucero Mi Mocosa 💛", 1024);
   const matCentral = new THREE.SpriteMaterial({
     map: texCentral, transparent: true, depthTest: false
   });
