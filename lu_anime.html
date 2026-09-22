@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Lucero 🌻</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: radial-gradient(circle at center, #0a0518 0%, #000000 100%);
+            overflow: hidden;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Pantalla de Inicio para saltar el bloqueo de audio */
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease;
+        }
+        #welcome-screen h2 {
+            color: #ffd700;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+            color: #000;
+            border: none;
+            padding: 15px 35px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: grab;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        .title-top {
+            position: absolute;
+            top: 30px;
+            text-align: center;
+            z-index: 10;
+            width: 100%;
+            pointer-events: none;
+        }
+        .title-top h1 {
+            color: #ffd700;
+            font-size: 2.3rem;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 170, 0, 0.4);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        /* Ocultar el iframe de YouTube para que solo se escuche */
+        #youtube-player {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de bienvenida interactiva -->
+    <div id="welcome-screen">
+        <h2>Recibiste un regalo... 🎁</h2>
+        <button class="start-btn" onclick="startExperience()">Abrir Regalo 🌻</button>
+    </div>
+
+    <div class="title-top">
+        <h1>Feliz día de las Flores Amarillas 🌻</h1>
+    </div>
+
+    <!-- API Iframe de YouTube Oculta con la canción original de Floricienta -->
+    <iframe id="youtube-player" src="https://youtube.com" allow="autoplay"></iframe>
+
+    <canvas id="galaxyCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('galaxyCanvas');
+        const ctx = canvas.getContext('2d');
+        let player;
+
+        // Cargar el script de la API de YouTube
+        const tag = document.createElement('script');
+        tag.src = "https://youtube.com";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // El reproductor queda listo en segundo plano
+        }
+
+        function startExperience() {
+            // Desvanecer la pantalla de bienvenida
+            const welcome = document.getElementById('welcome-screen');
+            welcome.style.opacity = '0';
+            setTimeout(() => welcome.style.display = 'none', 800);
+
+            // Iniciar la música de Floricienta de forma segura mediante acción de usuario
+            if (player && typeof player.playVideo === 'function') {
+                player.playVideo();
+            }
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const phrases = [
+            "Para mi mocosa", 
+            "Para mi dramática", 
+            "Mi flor favorita", 
+            "Sonríe siempre", 
+            "Siempre brillas", 
+            "Solo para ti", 
+            "Eres Luz", 
+            "Un detalle amarillo"
+        ];
+        const flowers = ["🌻", "🌼", "🌻", "✨"];
+        const particles = [];
+        const numParticles = 145;
+
+        let currentRotation = 0; 
+        let targetSpeed = 0.003;  
+        let currentSpeed = 0.003; 
+        let isDragging = false;
+        let previousX = 0;
+
+        for (let i = 0; i < numParticles; i++) {
+            const isPhrase = Math.random() > 0.35;
+            const text = isPhrase 
+                ? phrases[Math.floor(Math.random() * phrases.length)] 
+                : flowers[Math.floor(Math.random() * flowers.length)];
+
+            particles.push({
+                text: text,
+                isPhrase: isPhrase,
+                initialAngle: Math.random() * Math.PI * 2, 
+                radius: Math.random() * (window.innerWidth * 0.28 - window.innerWidth * 0.10) + window.innerWidth * 0.10,
+                yOffset: Math.random() * 60 - 30,
+                fontSize: isPhrase ? Math.random() * (15 - 11) + 11 : Math.random() * (26 - 18) + 18,
+                rot: Math.random() * Math.PI * 2,
+                rotSpeed: Math.random() * 0.02 - 0.01
+            });
+        }
+
+        const stars = [];
+        for(let i=0; i<250; i++) {
+            stars.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 1.8
+            });
+        }
+
+        // Interactividad
+        canvas.addEventListener('mousedown', (e) => { isDragging = true; previousX = e.clientX; });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - previousX;
+            currentSpeed = deltaX * 0.005; 
+            currentRotation += currentSpeed;
+            previousX = e.clientX;
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        canvas.addEventListener('touchstart', (e) => { isDragging = true; previousX = e.touches[0].clientX; });
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.touches[0].clientX - previousX;
+            currentSpeed = deltaX * 0.008; 
+            currentRotation += currentSpeed;
+            previousX = e.touches[0].clientX;
+        });
+        canvas.addEventListener('touchend', () => { isDragging = false; });
+
+        let time = 0;
+
+        function animate() {
+            time += 0.01;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            if (!isDragging) {
+                currentSpeed += (targetSpeed - currentSpeed) * 0.05; 
+                currentRotation += currentSpeed;
+            }
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            particles.forEach(p => {
+                p.calculatedAngle = p.initialAngle + currentRotation;
+                p.rot += p.rotSpeed;
+            });
+
+            particles.sort((a, b) => Math.sin(a.calculatedAngle) - Math.sin(b.calculatedAngle));
+            let centerDrawn = false;
+
+            particles.forEach(p => {
+                const cos = Math.cos(p.calculatedAngle);
+                const sin = Math.sin(p.calculatedAngle);
+
+                if (sin > 0 && !centerDrawn) {
+                    drawBlackHoleCenter(centerX, centerY);
+                    centerDrawn = true;
+                }
+
+                const x = centerX + cos * p.radius;
+                const y = centerY + sin * p.radius * 0.3 + p.yOffset;
+                const scale = (sin + 2) / 3; 
+                const alpha = (sin + 1) / 2 * 0.75 + 0.25;
+
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                
+                if (p.isPhrase) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = `bold ${p.fontSize * scale}px sans-serif`;
+                    ctx.shadowColor = "#ffd700";
+                    ctx.shadowBlur = 6;
+                    ctx.textAlign = "center";
+                    ctx.fillText(p.text, x, y);
+                } else {
+                    ctx.font = `${p.fontSize * scale}px sans-serif`;
+                    ctx.translate(x, y);
+                    ctx.rotate(p.rot);
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(p.text, 0, 0);
+                }
+                ctx.restore();
+            });
+
+            if (!centerDrawn) {
+                drawBlackHoleCenter(centerX, centerY);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function drawBlackHoleCenter(cx, cy) {
+            ctx.save();
