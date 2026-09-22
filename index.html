@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🌻 Te amo Lucero Mi Mocosa 💛</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,13 +12,20 @@
     background: #000;
     font-family: 'Segoe UI', sans-serif;
     touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
     cursor: grab;
   }
   body.dragging { cursor: grabbing; }
+  canvas { touch-action: none; display: block; }
+  #flowerScreen { touch-action: manipulation; }
 
   #flowerScreen {
     position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
     background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
     z-index: 100;
     transition: opacity 1.5s ease;
@@ -29,9 +36,13 @@
     font-size: 180px;
     cursor: pointer;
     user-select: none;
+    background: none;
+    border: none;
+    padding: 0;
     filter: drop-shadow(0 0 40px #ffd700) drop-shadow(0 0 80px #ffae00);
     animation: pulse 2s ease-in-out infinite;
     transition: transform .4s ease;
+    -webkit-tap-highlight-color: transparent;
   }
   .sunflower:hover { transform: scale(1.15) rotate(10deg); }
   .sunflower.clicked { animation: explode 1.2s forwards; }
@@ -63,10 +74,10 @@
     bottom: 20px; left: 50%;
     transform: translateX(-50%);
     color: #ffd700;
-    font-size: 13px;
+    font-size: 12px;
     letter-spacing: 1px;
     background: rgba(0,0,0,.5);
-    padding: 10px 20px;
+    padding: 8px 16px;
     border-radius: 30px;
     border: 1px solid rgba(255,215,0,.3);
     z-index: 50;
@@ -74,9 +85,14 @@
     transition: opacity 1s ease 2s;
     pointer-events: none;
     text-align: center;
-    max-width: 90vw;
+    max-width: 92vw;
   }
   #hud.visible { opacity: 1; }
+  @media (max-width: 600px) {
+    #hud { font-size: 10px; padding: 6px 12px; bottom: 12px; }
+    .sunflower { font-size: 140px; }
+    .hint { font-size: 16px; bottom: 40px; }
+  }
 
   #ytPlayer {
     position: fixed;
@@ -91,13 +107,13 @@
 <body>
 
 <div id="flowerScreen">
-  <div class="sunflower" id="sunflower">🌻</div>
+  <button class="sunflower" id="sunflower" aria-label="Toca la flor">🌻</button>
   <div class="hint">✨ Toca la flor Amor ✨</div>
 </div>
 
 <canvas id="canvas3d"></canvas>
 
-<div id="hud">🖱️ Arrastra para girar &nbsp;|&nbsp; 🔍 Rueda para zoom &nbsp;|&nbsp; 👆 Doble clic para restablecer</div>
+<div id="hud">🖱️ Arrastra para girar &nbsp;|&nbsp; 🔍 Pellizca o rueda para zoom &nbsp;|&nbsp; 👆 Doble tap para restablecer</div>
 
 <div id="ytPlayer"></div>
 
@@ -158,28 +174,24 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHei
 /* ---------- Luces cinematográficas ---------- */
 scene.add(new THREE.AmbientLight(0xfff2cc, 0.55));
 
-// Luz principal cálida (como el sol)
 const luzPrincipal = new THREE.DirectionalLight(0xffd700, 2.0);
 luzPrincipal.position.set(500, 600, 700);
 scene.add(luzPrincipal);
 
-// Luz de relleno suave
 const luzRelleno = new THREE.PointLight(0xffae00, 1.8, 3000);
 luzRelleno.position.set(-600, -300, -500);
 scene.add(luzRelleno);
 
-// Rim light dorado desde atrás
 const luzRim = new THREE.PointLight(0xffea88, 2.5, 2500);
 luzRim.position.set(0, 0, -800);
 scene.add(luzRim);
 
-// Luz puntual cálida en el centro (ilumina las flores cercanas)
 const luzCentro = new THREE.PointLight(0xffee99, 1.5, 1200);
 luzCentro.position.set(0, 0, 0);
 scene.add(luzCentro);
 
 /* =========================================================
-   ⭐ ESTRELLAS CENTELLANTES (arregladas)
+   ⭐ ESTRELLAS CENTELLANTES
    ========================================================= */
 let estrellasGrupos = [];
 
@@ -224,23 +236,19 @@ function crearEstrellasFondo() {
   const texturaEstrella = crearTexturaEstrella(128);
 
   crearCapaEstrellas({
-    cantidad: 600,
-    radioMin: 900, radioMax: 2000,
+    cantidad: 600, radioMin: 900, radioMax: 2000,
     size: 45, textura: texturaEstrella, doradas: false
   });
   crearCapaEstrellas({
-    cantidad: 1400,
-    radioMin: 1000, radioMax: 2400,
+    cantidad: 1400, radioMin: 1000, radioMax: 2400,
     size: 28, textura: texturaEstrella, doradas: false
   });
   crearCapaEstrellas({
-    cantidad: 400,
-    radioMin: 800, radioMax: 1800,
+    cantidad: 400, radioMin: 800, radioMax: 1800,
     size: 50, textura: texturaEstrella, doradas: true
   });
   crearCapaEstrellas({
-    cantidad: 3000,
-    radioMin: 1300, radioMax: 2800,
+    cantidad: 3000, radioMin: 1300, radioMax: 2800,
     size: 14, textura: texturaEstrella, doradas: false
   });
 }
@@ -298,7 +306,7 @@ function crearCapaEstrellas({ cantidad, radioMin, radioMax, size, textura, dorad
 }
 
 /* =========================================================
-   🌻 TEXTURAS REALISTAS DE FLORES (dibujadas con canvas)
+   🌻 TEXTURAS REALISTAS DE FLORES
    ========================================================= */
 
 // Girasol realista con pétalos, centro y sombras
@@ -308,12 +316,10 @@ function texturaGirasol(size = 512) {
   const ctx = c.getContext('2d');
   const cx = size / 2, cy = size / 2;
 
-  // Número de pétalos
   const numPetalos = 16;
   const radioExterior = size * 0.46;
   const radioInterior = size * 0.17;
 
-  // Dibujar pétalos desde atrás hacia adelante (por capas)
   for (let capa = 0; capa < 3; capa++) {
     const offsetAngulo = (capa * Math.PI) / numPetalos;
     const radioExt = radioExterior * (0.85 + capa * 0.075);
@@ -326,7 +332,6 @@ function texturaGirasol(size = 512) {
       const x2 = cx + Math.cos(angulo) * radioExt;
       const y2 = cy + Math.sin(angulo) * radioExt;
 
-      // Gradiente de pétalo (oscuro al centro, brillante en punta)
       const grad = ctx.createLinearGradient(x1, y1, x2, y2);
       if (capa === 2) {
         grad.addColorStop(0, '#d68a00');
@@ -342,12 +347,10 @@ function texturaGirasol(size = 512) {
         grad.addColorStop(1, '#ffb020');
       }
 
-      // Forma de pétalo (elipse alargada)
       const ancho = size * 0.055;
       ctx.save();
       ctx.translate(x1, y1);
       ctx.rotate(angulo);
-
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.moveTo(0, -ancho * 0.5);
@@ -356,20 +359,15 @@ function texturaGirasol(size = 512) {
       ctx.quadraticCurveTo((x2-x1) * 0.5, ancho * 0.9, 0, ancho * 0.5);
       ctx.closePath();
       ctx.fill();
-
-      // Línea sutil de sombra en el borde
       ctx.strokeStyle = 'rgba(120, 70, 0, 0.35)';
       ctx.lineWidth = 1.2;
       ctx.stroke();
-
       ctx.restore();
     }
   }
 
-  // Centro del girasol: gradiente marrón oscuro con textura de semillas
   const radioCentro = radioInterior * 1.25;
 
-  // Sombra del centro
   const sombraCentro = ctx.createRadialGradient(cx, cy, 0, cx, cy, radioCentro * 1.15);
   sombraCentro.addColorStop(0, 'rgba(0,0,0,0.3)');
   sombraCentro.addColorStop(1, 'rgba(0,0,0,0)');
@@ -378,7 +376,6 @@ function texturaGirasol(size = 512) {
   ctx.arc(cx, cy, radioCentro * 1.15, 0, Math.PI * 2);
   ctx.fill();
 
-  // Centro principal
   const gradCentro = ctx.createRadialGradient(
     cx - radioCentro * 0.3, cy - radioCentro * 0.3, 0,
     cx, cy, radioCentro
@@ -392,7 +389,6 @@ function texturaGirasol(size = 512) {
   ctx.arc(cx, cy, radioCentro, 0, Math.PI * 2);
   ctx.fill();
 
-  // Semillas (puntitos)
   const numSemillas = 120;
   for (let i = 0; i < numSemillas; i++) {
     const angulo = Math.random() * Math.PI * 2;
@@ -400,7 +396,6 @@ function texturaGirasol(size = 512) {
     const px = cx + Math.cos(angulo) * dist;
     const py = cy + Math.sin(angulo) * dist;
     const sr = size * 0.006 + Math.random() * size * 0.004;
-
     ctx.fillStyle = Math.random() > 0.5
       ? 'rgba(255, 200, 100, 0.35)'
       : 'rgba(0, 0, 0, 0.45)';
@@ -409,7 +404,6 @@ function texturaGirasol(size = 512) {
     ctx.fill();
   }
 
-  // Brillo superior izquierdo (reflejo)
   const brillo = ctx.createRadialGradient(
     cx - radioCentro * 0.4, cy - radioCentro * 0.4, 0,
     cx - radioCentro * 0.4, cy - radioCentro * 0.4, radioCentro * 0.8
@@ -434,16 +428,13 @@ function texturaRamo(size = 512) {
   const ctx = c.getContext('2d');
   const cx = size / 2, cy = size / 2;
 
-  // Base: papel de regalo arrugado alrededor
   ctx.save();
   const gradPapel = ctx.createRadialGradient(cx, cy, size*0.2, cx, cy, size*0.48);
   gradPapel.addColorStop(0, 'rgba(240, 230, 200, 0.9)');
   gradPapel.addColorStop(0.7, 'rgba(200, 185, 150, 0.85)');
   gradPapel.addColorStop(1, 'rgba(150, 130, 90, 0)');
-
   ctx.fillStyle = gradPapel;
   ctx.beginPath();
-  // Forma de cono de papel
   const numPuntos = 20;
   for (let i = 0; i <= numPuntos; i++) {
     const ang = (i / numPuntos) * Math.PI * 2;
@@ -456,7 +447,6 @@ function texturaRamo(size = 512) {
   ctx.closePath();
   ctx.fill();
 
-  // Líneas de pliegue del papel
   ctx.strokeStyle = 'rgba(100, 80, 50, 0.4)';
   ctx.lineWidth = 1.5;
   for (let i = 0; i < 12; i++) {
@@ -468,7 +458,6 @@ function texturaRamo(size = 512) {
   }
   ctx.restore();
 
-  // Flores dentro del ramo (varias flores amarillas y blancas)
   const flores = [
     { x: 0.5, y: 0.35, r: 0.11, color: 'girasol' },
     { x: 0.33, y: 0.45, r: 0.09, color: 'blanca' },
@@ -488,8 +477,6 @@ function texturaRamo(size = 512) {
     const fr = f.r * size;
 
     if (f.color === 'girasol') {
-      // Girasol pequeño
-      // Pétalos
       const numPet = 10;
       for (let i = 0; i < numPet; i++) {
         const ang = (i / numPet) * Math.PI * 2;
@@ -497,11 +484,9 @@ function texturaRamo(size = 512) {
         const py = fy + Math.sin(ang) * fr * 0.5;
         const pxFin = fx + Math.cos(ang) * fr * 1.05;
         const pyFin = fy + Math.sin(ang) * fr * 1.05;
-
         const grad = ctx.createLinearGradient(px, py, pxFin, pyFin);
         grad.addColorStop(0, '#ffb300');
         grad.addColorStop(1, '#ffdc4a');
-
         ctx.save();
         ctx.translate(px, py);
         ctx.rotate(ang);
@@ -519,8 +504,6 @@ function texturaRamo(size = 512) {
         ctx.stroke();
         ctx.restore();
       }
-
-      // Centro
       const gc = ctx.createRadialGradient(fx - fr*0.15, fy - fr*0.15, 0, fx, fy, fr * 0.4);
       gc.addColorStop(0, '#6b3a00');
       gc.addColorStop(1, '#1f0f00');
@@ -528,9 +511,7 @@ function texturaRamo(size = 512) {
       ctx.beginPath();
       ctx.arc(fx, fy, fr * 0.4, 0, Math.PI * 2);
       ctx.fill();
-
     } else {
-      // Flor blanca (margarita)
       const numPet = 8;
       for (let i = 0; i < numPet; i++) {
         const ang = (i / numPet) * Math.PI * 2;
@@ -538,11 +519,9 @@ function texturaRamo(size = 512) {
         const py = fy + Math.sin(ang) * fr * 0.5;
         const pxFin = fx + Math.cos(ang) * fr * 1.0;
         const pyFin = fy + Math.sin(ang) * fr * 1.0;
-
         const grad = ctx.createLinearGradient(px, py, pxFin, pyFin);
         grad.addColorStop(0, '#e8e8e0');
         grad.addColorStop(1, '#ffffff');
-
         ctx.save();
         ctx.translate(px, py);
         ctx.rotate(ang);
@@ -560,8 +539,6 @@ function texturaRamo(size = 512) {
         ctx.stroke();
         ctx.restore();
       }
-
-      // Centro amarillo
       const gc = ctx.createRadialGradient(fx - fr*0.1, fy - fr*0.1, 0, fx, fy, fr * 0.32);
       gc.addColorStop(0, '#ffeb70');
       gc.addColorStop(1, '#e0a800');
@@ -572,17 +549,14 @@ function texturaRamo(size = 512) {
     }
   });
 
-  // Hojas verdes asomándose
   ctx.save();
   for (let i = 0; i < 5; i++) {
     const ang = (i / 5) * Math.PI * 2 + 0.3;
     const hx = cx + Math.cos(ang) * size * 0.38;
     const hy = cy + Math.sin(ang) * size * 0.38;
-
     const grad = ctx.createLinearGradient(hx, hy, cx, cy);
     grad.addColorStop(0, '#7ab648');
     grad.addColorStop(1, '#3d6b1f');
-
     ctx.fillStyle = grad;
     ctx.save();
     ctx.translate(hx, hy);
@@ -600,7 +574,7 @@ function texturaRamo(size = 512) {
   return tex;
 }
 
-// Flor amarilla pequeña (para variedad)
+// Flor amarilla pequeña
 function texturaFlorAmarilla(size = 256) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -610,12 +584,10 @@ function texturaFlorAmarilla(size = 256) {
   const numPet = 8;
   for (let i = 0; i < numPet; i++) {
     const ang = (i / numPet) * Math.PI * 2;
-
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.45);
     grad.addColorStop(0, '#ffdc4a');
     grad.addColorStop(0.6, '#ffb300');
     grad.addColorStop(1, '#d68a00');
-
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(ang);
@@ -629,7 +601,6 @@ function texturaFlorAmarilla(size = 256) {
     ctx.restore();
   }
 
-  // Centro con degradado
   const gc = ctx.createRadialGradient(cx - 10, cy - 10, 0, cx, cy, size * 0.15);
   gc.addColorStop(0, '#7a4400');
   gc.addColorStop(1, '#2a1500');
@@ -638,7 +609,6 @@ function texturaFlorAmarilla(size = 256) {
   ctx.arc(cx, cy, size * 0.15, 0, Math.PI * 2);
   ctx.fill();
 
-  // Puntitos
   for (let i = 0; i < 30; i++) {
     const a = Math.random() * Math.PI * 2;
     const d = Math.random() * size * 0.13;
@@ -656,7 +626,7 @@ function texturaFlorAmarilla(size = 256) {
   return tex;
 }
 
-/* ---------- Texturas de mensajes ---------- */
+/* ---------- Textura de mensajes ---------- */
 function texturaMensaje(texto, size = 1024) {
   const c = document.createElement('canvas');
   c.width = size;
@@ -672,7 +642,6 @@ function texturaMensaje(texto, size = 1024) {
   const x = (c.width - w) / 2;
   const y = (c.height - h) / 2;
 
-  // Fondo redondeado dorado con gradiente
   const grad = ctx.createLinearGradient(x, y, x, y + h);
   grad.addColorStop(0, 'rgba(255, 230, 130, 0.22)');
   grad.addColorStop(1, 'rgba(255, 180, 40, 0.15)');
@@ -685,7 +654,6 @@ function texturaMensaje(texto, size = 1024) {
   ctx.fill();
   ctx.stroke();
 
-  // Texto con brillo
   ctx.shadowColor = '#ffae00';
   ctx.shadowBlur = 22;
   ctx.fillStyle = '#fff5c0';
@@ -707,7 +675,6 @@ let mundo;
 let floresEsfera = [];
 
 function crearMundoEsfera() {
-  // Esfera base (dorada con textura orgánica)
   const geo = new THREE.SphereGeometry(RADIO_MUNDO, 96, 96);
   const mat = new THREE.MeshStandardMaterial({
     color: 0xffb300,
@@ -719,7 +686,6 @@ function crearMundoEsfera() {
   mundo = new THREE.Mesh(geo, mat);
   scene.add(mundo);
 
-  // Halo brillante
   const halo = new THREE.Mesh(
     new THREE.SphereGeometry(RADIO_MUNDO * 1.18, 48, 48),
     new THREE.MeshBasicMaterial({
@@ -732,12 +698,342 @@ function crearMundoEsfera() {
   );
   mundo.add(halo);
 
-  // Preparar texturas realistas
   const texGirasol = texturaGirasol(512);
   const texRamo    = texturaRamo(512);
   const texFlor    = texturaFlorAmarilla(256);
 
-  // Distribución de tipos de flores: 40% girasoles, 40% ramos, 20% flores amarillas
+  // Distribución: 40% girasoles, 40% ramos, 20% flores amarillas
   const tipos = [];
   for (let i = 0; i < 60; i++) tipos.push('girasol');
-  for (let i = 0; i < 60; i++)
+  for (let i = 0; i < 60; i++) tipos.push('ramo');
+  for (let i = 0; i < 30; i++) tipos.push('flor');
+
+  // Mezclar aleatoriamente
+  for (let i = tipos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tipos[i], tipos[j]] = [tipos[j], tipos[i]];
+  }
+
+  const CANTIDAD_RAMOS = tipos.length;
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+  for (let i = 0; i < CANTIDAD_RAMOS; i++) {
+    const y = 1 - (i / (CANTIDAD_RAMOS - 1)) * 2;
+    const radioEnY = Math.sqrt(1 - y * y);
+    const theta = goldenAngle * i;
+
+    const x = Math.cos(theta) * radioEnY;
+    const z = Math.sin(theta) * radioEnY;
+
+    const tipo = tipos[i];
+    let tex, tam;
+
+    if (tipo === 'girasol') {
+      tex = texGirasol;
+      tam = 90 + Math.random() * 30;
+    } else if (tipo === 'ramo') {
+      tex = texRamo;
+      tam = 110 + Math.random() * 40;
+    } else {
+      tex = texFlor;
+      tam = 60 + Math.random() * 20;
+    }
+
+    const matSprite = new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false, depthTest: true
+    });
+    const sprite = new THREE.Sprite(matSprite);
+
+    const pos = new THREE.Vector3(x, y, z).multiplyScalar(CAPA_FLORES);
+    sprite.position.copy(pos);
+    sprite.scale.set(tam, tam, 1);
+
+    floresEsfera.push({
+      sprite, basePos: pos.clone(),
+      fase: Math.random() * Math.PI * 2,
+      tamBase: tam
+    });
+
+    mundo.add(sprite);
+  }
+
+  const texCentral = texturaMensaje("Te amo Lucero Mi Mocosa 💛", 1024);
+  const matCentral = new THREE.SpriteMaterial({
+    map: texCentral, transparent: true, depthTest: false
+  });
+  const spriteCentral = new THREE.Sprite(matCentral);
+  spriteCentral.scale.set(420, 105, 1);
+  spriteCentral.renderOrder = 999;
+  mundo.add(spriteCentral);
+}
+
+/* =========================================================
+   💬 MENSAJES ORBITANDO
+   ========================================================= */
+let mensajesSprites = [];
+
+function crearMensajes() {
+  const RADIO_ORBITA = 900;
+  mensajes.forEach((texto, i) => {
+    const tex = texturaMensaje(texto, 1024);
+    const mat = new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(320, 80, 1);
+
+    const angulo = (i / mensajes.length) * Math.PI * 2;
+    const radio  = RADIO_ORBITA + (i % 4) * 80;
+    const altura = (i % 6 - 3) * 130;
+    const velocidad = 0.08 + Math.random() * 0.05;
+    const fase = Math.random() * Math.PI * 2;
+
+    mensajesSprites.push({ sprite, angulo, radio, altura, velocidad, fase });
+    scene.add(sprite);
+  });
+}
+
+/* =========================================================
+   🖱️ INTERACCIÓN: ratón + táctil
+   ========================================================= */
+let rotX = 0, rotY = 0;
+let targetRotY = 0, targetRotX = 0;
+let camDist = 1100, targetCamDist = 1100;
+let dragging = false, lastX = 0, lastY = 0;
+let pinchStartDist = 0, pinchStartCamDist = 1100;
+let lastTap = 0;
+
+// --- Ratón ---
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  lastX = e.clientX; lastY = e.clientY;
+  document.body.classList.add('dragging');
+});
+window.addEventListener('mouseup', () => {
+  dragging = false;
+  document.body.classList.remove('dragging');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  targetRotY += dx * 0.4;
+  targetRotX += dy * 0.4;
+  targetRotX = Math.max(-75, Math.min(75, targetRotX));
+  lastX = e.clientX; lastY = e.clientY;
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  targetCamDist += e.deltaY * 1.0;
+  targetCamDist = Math.max(500, Math.min(2200, targetCamDist));
+}, { passive: false });
+
+canvas.addEventListener('dblclick', () => {
+  targetRotX = 0; targetRotY = 0; targetCamDist = 1100;
+});
+
+// --- Táctil ---
+function distanciaTactil(t1, t2) {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.hypot(dx, dy);
+}
+
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) {
+    dragging = true;
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      targetRotX = 0; targetRotY = 0; targetCamDist = 1100;
+    }
+    lastTap = now;
+
+  } else if (e.touches.length === 2) {
+    dragging = false;
+    pinchStartDist = distanciaTactil(e.touches[0], e.touches[1]);
+    pinchStartCamDist = targetCamDist;
+  }
+}, { passive: true });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+
+  if (e.touches.length === 1 && dragging) {
+    const dx = e.touches[0].clientX - lastX;
+    const dy = e.touches[0].clientY - lastY;
+    targetRotY += dx * 0.5;
+    targetRotX += dy * 0.5;
+    targetRotX = Math.max(-75, Math.min(75, targetRotX));
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+
+  } else if (e.touches.length === 2) {
+    const d = distanciaTactil(e.touches[0], e.touches[1]);
+    const factor = pinchStartDist / d;
+    targetCamDist = Math.max(500, Math.min(2200, pinchStartCamDist * factor));
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+  dragging = false;
+  pinchStartDist = 0;
+}, { passive: true });
+
+// Bloquear scroll/zoom del navegador sobre el canvas
+document.addEventListener('touchmove', e => {
+  if (e.target === canvas) e.preventDefault();
+}, { passive: false });
+
+/* =========================================================
+   🎬 ANIMACIÓN
+   ========================================================= */
+const clock = new THREE.Clock();
+let inicializado = false;
+
+function animar() {
+  if (!inicializado) return;
+  const t = clock.getElapsedTime();
+
+  targetRotY += 0.12;
+
+  rotY += (targetRotY - rotY) * 0.08;
+  rotX += (targetRotX - rotX) * 0.08;
+  camDist += (targetCamDist - camDist) * 0.08;
+
+  const radY = rotY * Math.PI / 180;
+  const radX = rotX * Math.PI / 180;
+  camera.position.set(
+    Math.sin(radY) * Math.cos(radX) * camDist,
+    Math.sin(radX) * camDist,
+    Math.cos(radY) * Math.cos(radX) * camDist
+  );
+  camera.lookAt(0, 0, 0);
+
+  if (mundo) mundo.rotation.y += 0.0025;
+
+  // ⭐ Parpadeo de estrellas (cada capa con su propio ritmo)
+  estrellasGrupos.forEach(g => {
+    const p = 0.55 + 0.45 * Math.sin(t * g.velParpadeo + g.fase);
+    g.mat.opacity = p;
+    g.mat.size = g.sizeBase * (1 + Math.sin(t * g.velParpadeo + g.fase) * 0.06);
+  });
+
+  // Flores con bob
+  floresEsfera.forEach(f => {
+    const bob = Math.sin(t * 2 + f.fase) * 0.06;
+    f.sprite.position.copy(f.basePos).multiplyScalar(1 + bob);
+    const s = f.tamBase * (1 + Math.sin(t * 3 + f.fase) * 0.08);
+    f.sprite.scale.set(s, s, 1);
+  });
+
+  // Mensajes orbitando
+  mensajesSprites.forEach(o => {
+    const a = o.angulo + t * o.velocidad;
+    const x = Math.cos(a) * o.radio;
+    const z = Math.sin(a) * o.radio;
+    const y = o.altura + Math.sin(t * 1.2 + o.fase) * 25;
+    o.sprite.position.set(x, y, z);
+
+    const depth = z / o.radio;
+    const scaleFactor = 0.7 + (depth + 1) * 0.15;
+    o.sprite.scale.set(320 * scaleFactor, 80 * scaleFactor, 1);
+
+    const op = 0.35 + (depth + 1) * 0.35;
+    o.sprite.material.opacity = Math.max(0.15, Math.min(1, op));
+  });
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animar);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* =========================================================
+   🎵 YOUTUBE + INICIO
+   ========================================================= */
+let player;
+window.onYouTubeIframeAPIReady = function () {
+  player = new YT.Player('ytPlayer', {
+    height: '1', width: '1',
+    videoId: YOUTUBE_VIDEO_ID,
+    playerVars: {
+      autoplay: 0, controls: 0, loop: 1,
+      playlist: YOUTUBE_VIDEO_ID,
+      modestbranding: 1, rel: 0,
+      playsinline: 1,
+      origin: window.location.origin
+    },
+    events: {
+      onReady: () => {
+        player.setVolume(80);
+        try { player.unMute(); } catch(e) {}
+      }
+    }
+  });
+};
+
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+
+const sunflower = document.getElementById('sunflower');
+const flowerScreen = document.getElementById('flowerScreen');
+const hud = document.getElementById('hud');
+
+let yaIniciado = false;
+
+function iniciarExperiencia(e) {
+  if (yaIniciado) return;
+  yaIniciado = true;
+
+  // 🔥 Reproducir INMEDIATAMENTE dentro del gesto (clave en móvil)
+  if (player && player.playVideo) {
+    try {
+      player.setVolume(80);
+      player.unMute();
+      player.playVideo();
+    } catch (err) { console.warn('Audio:', err); }
+  }
+
+  sunflower.classList.add('clicked');
+
+  setTimeout(() => {
+    flowerScreen.classList.add('hidden');
+    canvas.classList.add('visible');
+    hud.classList.add('visible');
+
+    crearEstrellasFondo();
+    crearMundoEsfera();
+    crearMensajes();
+
+    inicializado = true;
+    animar();
+  }, 900);
+}
+
+sunflower.addEventListener('click', iniciarExperiencia);
+sunflower.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  iniciarExperiencia(e);
+}, { passive: false });
+
+flowerScreen.addEventListener('click', (e) => {
+  if (e.target === flowerScreen) iniciarExperiencia(e);
+});
+flowerScreen.addEventListener('touchend', (e) => {
+  if (e.target === flowerScreen) {
+    e.preventDefault();
+    iniciarExperiencia(e);
+  }
+}, { passive: false });
+</script>
+</body>
+</html>
